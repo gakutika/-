@@ -9,13 +9,13 @@
 </head>
 <body>
 
-  <!-- ===== ① ホーム画面 ===== -->
+  <!-- ===== ホーム画面 ===== -->
   <section class="screen screen-home" id="screenHome">
     <div class="home-content">
       <p class="home-subtitle">NEURAL INPUT SYSTEM v2.0</p>
       <h1 class="home-title">CYBER<br>FLICK</h1>
       <div class="home-title-glow" aria-hidden="true"></div>
-      <p class="home-tagline">近未来フリック入力トレーニング</p>
+      <p class="home-tagline">近未来タイピングトレーニング</p>
       <div class="home-buttons">
         <button class="neon-btn neon-btn--primary" id="btnStartMission">START MISSION</button>
         <button class="neon-btn neon-btn--secondary" id="btnLeaderboard">LEADERBOARD</button>
@@ -24,7 +24,7 @@
     </div>
   </section>
 
-  <!-- ===== ミッション（難易度）選択画面 ===== -->
+  <!-- ===== ミッション選択画面 ===== -->
   <section class="screen screen-mission hidden" id="screenMission">
     <div class="panel-card">
       <h2 class="panel-title">SELECT MISSION</h2>
@@ -53,47 +53,63 @@
   <!-- ===== ゲーム画面 ===== -->
   <section class="screen screen-game hidden" id="screenGame">
     <div class="game-container">
+
+      <!-- 上部 HUD -->
       <header class="hud">
-        <div class="hud-left">
-          <div class="hud-item">
-            <span class="hud-label">SCORE</span>
-            <span class="hud-value" id="score">0</span>
-          </div>
-          <div class="hud-item combo-item">
-            <span class="hud-label">COMBO</span>
-            <span class="hud-value combo-value" id="combo">0</span>
-            <span class="combo-multiplier" id="comboMultiplier"></span>
-          </div>
+        <div class="hud-item">
+          <span class="hud-label">SCORE</span>
+          <span class="hud-value" id="score">0</span>
         </div>
-        <div class="hud-center">
-          <div class="hud-item">
-            <span class="hud-label">ACHIEVEMENT</span>
-            <span class="hud-value achievement-value" id="achievementHud">0%</span>
-          </div>
+        <div class="hud-item">
+          <span class="hud-label">COMBO</span>
+          <span class="hud-value combo-value" id="combo">0</span>
+          <span class="combo-multiplier" id="comboMultiplier"></span>
         </div>
-        <div class="hud-right">
-          <div class="timer-bar-wrap">
-            <span class="hud-label">TIME</span>
-            <div class="timer-bar">
-              <div class="timer-fill" id="timerFill"></div>
-            </div>
-          </div>
-          <button class="hud-pause-btn" id="btnPause" aria-label="一時停止">⏸</button>
+        <div class="hud-item">
+          <span class="hud-label">ACHIEVEMENT</span>
+          <span class="hud-value achievement-value" id="achievementHud">0%</span>
         </div>
       </header>
 
-      <main class="word-area">
+      <!-- 中央タイピングエリア（タップでキーボード起動） -->
+      <main class="word-area" id="wordTapArea">
         <div class="word-label" id="missionLabel">TYPE THIS</div>
+
         <div class="target-word" id="targetWord" aria-live="polite"></div>
-        <div class="input-display" id="inputDisplay"></div>
+
+        <div class="typing-progress">
+          <span class="typing-progress-label">YOUR INPUT</span>
+          <div class="input-display" id="inputDisplay"></div>
+        </div>
+
+        <div class="timer-center">
+          <span class="hud-label">TIME</span>
+          <div class="timer-bar timer-bar--large">
+            <div class="timer-fill" id="timerFill"></div>
+          </div>
+        </div>
+
+        <p class="typing-hint" id="typingHint">画面をタップしてキーボードを表示</p>
         <div class="effect-overlay" id="effectOverlay"></div>
       </main>
 
-      <section class="keyboard-section">
-        <p class="keyboard-hint">キーを押したまま上下左右にフリック</p>
-        <div class="flick-keyboard" id="flickKeyboard"></div>
-      </section>
+      <button class="hud-pause-btn hud-pause-btn--float" id="btnPause" aria-label="一時停止">⏸</button>
     </div>
+
+    <!-- 非表示の入力欄（OS標準キーボード用） -->
+    <input
+      type="text"
+      id="typingInput"
+      class="typing-input-hidden"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      inputmode="text"
+      lang="ja"
+      aria-hidden="true"
+      tabindex="-1"
+    >
   </section>
 
   <!-- ===== リザルト画面 ===== -->
@@ -112,7 +128,6 @@
       </div>
       <p class="result-detail" id="resultDetail">最大コンボ 24 / クリア基準 3,000pt</p>
 
-      <!-- ランキング登録 -->
       <div class="result-submit">
         <label class="result-submit-label" for="agentName">エージェント名を入力</label>
         <input type="text" class="neon-input" id="agentName" placeholder="ななしのエージェント" maxlength="16" autocomplete="off">
@@ -146,9 +161,7 @@
               <th>SCORE</th>
             </tr>
           </thead>
-          <tbody id="lbTableBody">
-            <!-- game.js が動的に生成 -->
-          </tbody>
+          <tbody id="lbTableBody"></tbody>
         </table>
       </div>
       <p class="lb-hint" id="lbPlayerHint"></p>
@@ -156,7 +169,7 @@
     </div>
   </section>
 
-  <!-- ===== 設定ポップアップ（モーダル） ===== -->
+  <!-- ===== 設定ポップアップ ===== -->
   <div class="modal-overlay hidden" id="screenSettings">
     <div class="settings-card">
       <h2 class="settings-title">SETTINGS</h2>

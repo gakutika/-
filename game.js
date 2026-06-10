@@ -1,48 +1,12 @@
 'use strict';
 
 // ============================================================
-// フリックキーボード定義
+// 文字照合（ぇ と え など表記ゆれを許容）
 // ============================================================
-const KEYBOARD_LAYOUT = [
-  [
-    { base: 'あ', flicks: { left: 'い', up: 'う', right: 'え', down: 'お' } },
-    { base: 'か', flicks: { left: 'き', up: 'く', right: 'け', down: 'こ' } },
-    { base: 'さ', flicks: { left: 'し', up: 'す', right: 'せ', down: 'そ' } },
-    { base: 'た', flicks: { left: 'ち', up: 'つ', right: 'て', down: 'と' } },
-    { base: 'な', flicks: { left: 'に', up: 'ぬ', right: 'ね', down: 'の' } },
-  ],
-  [
-    { base: 'は', flicks: { left: 'ひ', up: 'ふ', right: 'へ', down: 'ほ' } },
-    { base: 'ま', flicks: { left: 'み', up: 'む', right: 'め', down: 'も' } },
-    { base: 'や', flicks: { left: '（', up: 'ゆ', right: '）', down: 'よ' } },
-    { base: 'ら', flicks: { left: 'り', up: 'る', right: 'れ', down: 'ろ' } },
-    { base: 'わ', flicks: { left: 'を', up: 'ん', right: 'ー', down: '゛' } },
-  ],
-  [
-    { base: 'ゃ', flicks: null },
-    { base: 'ゅ', flicks: null },
-    { base: 'ょ', flicks: null },
-    { base: '゜', flicks: null },
-    { base: '゛', flicks: null },
-  ],
-];
-
-const CHAR_DECOMPOSE = {
-  'が': ['か','゛'], 'ぎ': ['き','゛'], 'ぐ': ['く','゛'], 'げ': ['け','゛'], 'ご': ['こ','゛'],
-  'ざ': ['さ','゛'], 'じ': ['し','゛'], 'ず': ['す','゛'], 'ぜ': ['せ','゛'], 'ぞ': ['そ','゛'],
-  'だ': ['た','゛'], 'ぢ': ['ち','゛'], 'づ': ['つ','゛'], 'で': ['て','゛'], 'ど': ['と','゛'],
-  'ば': ['は','゛'], 'び': ['ひ','゛'], 'ぶ': ['ふ','゛'], 'べ': ['へ','゛'], 'ぼ': ['ほ','゛'],
-  'ぱ': ['は','゜'], 'ぴ': ['ひ','゜'], 'ぷ': ['ふ','゜'], 'ぺ': ['へ','゜'], 'ぽ': ['ほ','゜'],
-  'っ': ['つ','つ'],
-};
-
-function expandStrokes(label) {
-  const strokes = [];
-  for (const ch of label) {
-    if (CHAR_DECOMPOSE[ch]) strokes.push(...CHAR_DECOMPOSE[ch]);
-    else strokes.push(ch);
-  }
-  return strokes;
+function charsMatch(typed, expected) {
+  if (typed === expected) return true;
+  if (expected === 'ぇ' && typed === 'え') return true; // ぇ は え でも正解
+  return false;
 }
 
 // ============================================================
@@ -72,17 +36,9 @@ const MISSIONS = {
   },
 };
 
-// キーボードにない文字がある単語の打鍵上書き（ぇ → え など）
-const WORD_STROKE_OVERRIDES = {
-  'がじぇっと': expandStrokes('がじえっと'),
-};
-
-// 単語データを打鍵シーケンス付きで準備
+// 単語データを準備
 Object.values(MISSIONS).forEach(m => {
-  m.wordData = m.words.map(label => ({
-    label,
-    strokes: WORD_STROKE_OVERRIDES[label] || expandStrokes(label),
-  }));
+  m.wordData = m.words.map(label => ({ label }));
 });
 
 // コンボ回復など（ミッション中の爽快感）
@@ -93,7 +49,77 @@ const TIME_CONFIG = {
   missPenalty: 0.5,
 };
 
-const FLICK_THRESHOLD = 18;
+// ============================================================
+// ローマ字入力（PC向け・日本語IMEなしでもプレイ可能）
+// ============================================================
+const ROMAJI_MAP = {
+  'kya':'きゃ','kyu':'きゅ','kyo':'きょ','gya':'ぎゃ','gyu':'ぎゅ','gyo':'ぎょ',
+  'sha':'しゃ','shu':'しゅ','sho':'しょ','ja':'じゃ','ju':'じゅ','jo':'じょ',
+  'cha':'ちゃ','chu':'ちゅ','cho':'ちょ','nya':'にゃ','nyu':'にゅ','nyo':'にょ',
+  'hya':'ひゃ','hyu':'ひゅ','hyo':'ひょ','bya':'びゃ','byu':'びゅ','byo':'びょ',
+  'pya':'ぴゃ','pyu':'ぴゅ','pyo':'ぴょ','mya':'みゃ','myu':'みゅ','myo':'みょ',
+  'rya':'りゃ','ryu':'りゅ','ryo':'りょ',
+  'shi':'し','chi':'ち','tsu':'つ','fu':'ふ',
+  'ga':'が','gi':'ぎ','gu':'ぐ','ge':'げ','go':'ご',
+  'za':'ざ','ji':'じ','zu':'ず','ze':'ぜ','zo':'ぞ',
+  'da':'だ','de':'で','do':'ど',
+  'ba':'ば','bi':'び','bu':'ぶ','be':'べ','bo':'ぼ',
+  'pa':'ぱ','pi':'ぴ','pu':'ぷ','pe':'ぺ','po':'ぽ',
+  'ka':'か','ki':'き','ku':'く','ke':'け','ko':'こ',
+  'sa':'さ','su':'す','se':'せ','so':'そ',
+  'ta':'た','te':'て','to':'と',
+  'na':'な','ni':'に','nu':'ぬ','ne':'ね','no':'の',
+  'ha':'は','hi':'ひ','he':'へ','ho':'ほ',
+  'ma':'ま','mi':'み','mu':'む','me':'め','mo':'も',
+  'ya':'や','yu':'ゆ','yo':'よ',
+  'ra':'ら','ri':'り','ru':'る','re':'れ','ro':'ろ',
+  'wa':'わ','wo':'を',
+  'a':'あ','i':'い','u':'う','e':'え','o':'お',
+  'n':'ん','-':'ー',
+};
+const ROMAJI_KEYS = Object.keys(ROMAJI_MAP).sort((a, b) => b.length - a.length);
+let romajiBuffer = '';
+let isComposing = false;
+
+function feedRomaji(ch) {
+  // 促音（っ）：同じ子音が連続したら「っ」を出力
+  if ('bcdfghjkmnpqrstvwxyz'.includes(ch) && romajiBuffer.endsWith(ch)) {
+    processChar('っ');
+    romajiBuffer = romajiBuffer.slice(0, -1);
+  }
+  romajiBuffer += ch;
+  flushRomaji();
+}
+
+function flushRomaji() {
+  let changed = true;
+  while (changed && romajiBuffer.length > 0) {
+    changed = false;
+    for (const key of ROMAJI_KEYS) {
+      if (romajiBuffer.startsWith(key)) {
+        const out = ROMAJI_MAP[key];
+        if (out.length === 1) processChar(out);
+        else { for (const c of out) processChar(c); }
+        romajiBuffer = romajiBuffer.slice(key.length);
+        changed = true;
+        break;
+      }
+    }
+    // 「ん」の特殊処理：n + 母音以外で確定
+    if (!changed && romajiBuffer === 'nn') {
+      processChar('ん');
+      romajiBuffer = 'n';
+      changed = true;
+    } else if (!changed && romajiBuffer.startsWith('n') && romajiBuffer.length >= 2) {
+      const next = romajiBuffer[1];
+      if (!'aiueoy'.includes(next)) {
+        processChar('ん');
+        romajiBuffer = romajiBuffer.slice(1);
+        changed = true;
+      }
+    }
+  }
+}
 
 // ============================================================
 // エージェント・ランク（称号）S〜D ※難易度ごとのスコア基準
@@ -395,7 +421,9 @@ const els = {
   targetWord:       document.getElementById('targetWord'),
   inputDisplay:     document.getElementById('inputDisplay'),
   effectOverlay:    document.getElementById('effectOverlay'),
-  flickKeyboard:    document.getElementById('flickKeyboard'),
+  typingInput:      document.getElementById('typingInput'),
+  wordTapArea:      document.getElementById('wordTapArea'),
+  typingHint:       document.getElementById('typingHint'),
   missionLabel:     document.getElementById('missionLabel'),
   resultMissionLabel: document.getElementById('resultMissionLabel'),
   resultStatus:     document.getElementById('resultStatus'),
@@ -418,15 +446,80 @@ function showScreen(name) {
   Object.entries(screens).forEach(([key, el]) => {
     if (el) el.classList.toggle('hidden', key !== name);
   });
+  if (name !== 'game') blurTypingInput();
 }
 
 function openSettings() {
+  blurTypingInput();
   els.screenSettings.classList.remove('hidden');
 }
 
 function closeSettings() {
   els.screenSettings.classList.add('hidden');
   if (state.isPaused && state.isPlaying) resumeGame();
+}
+
+// ============================================================
+// OS標準キーボード入力
+// ============================================================
+function focusTypingInput() {
+  if (!state.isPlaying || state.isPaused || !els.typingInput) return;
+  els.typingInput.value = '';
+  romajiBuffer = '';
+  setTimeout(() => {
+    els.typingInput.focus({ preventScroll: true });
+    if (els.typingHint) els.typingHint.classList.add('typing-hint--active');
+  }, 80);
+}
+
+function blurTypingInput() {
+  els.typingInput?.blur();
+  if (els.typingHint) els.typingHint.classList.remove('typing-hint--active');
+}
+
+function handleTextInput(text) {
+  for (const ch of text) {
+    // ひらがな・長音記号のみ受け付け
+    if (/[\u3040-\u309F\u30FC]/.test(ch)) processChar(ch);
+  }
+}
+
+function initTypingInput() {
+  const input = els.typingInput;
+  if (!input) return;
+
+  input.addEventListener('compositionstart', () => { isComposing = true; });
+  input.addEventListener('compositionend', (e) => {
+    isComposing = false;
+    handleTextInput(e.data || '');
+    input.value = '';
+  });
+
+  input.addEventListener('input', () => {
+    if (isComposing) return;
+    handleTextInput(input.value);
+    input.value = '';
+  });
+
+  // 画面タップでキーボードを起動
+  els.wordTapArea?.addEventListener('click', () => focusTypingInput());
+  els.wordTapArea?.addEventListener('touchstart', (e) => {
+    if (e.target.closest('#btnPause')) return;
+    focusTypingInput();
+  }, { passive: true });
+
+  // PC：ローマ字入力（日本語IMEオフ時）
+  document.addEventListener('keydown', (e) => {
+    if (!state.isPlaying || state.isPaused || isComposing) return;
+    if (screens.game?.classList.contains('hidden')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (document.activeElement === els.agentName) return;
+
+    if (e.key.length === 1 && /[a-z\-]/i.test(e.key)) {
+      e.preventDefault();
+      feedRomaji(e.key.toLowerCase());
+    }
+  });
 }
 
 // ============================================================
@@ -446,113 +539,15 @@ function recoverTime(amount) {
 }
 
 // ============================================================
-// キーボード
+// 入力・スコア（ひらがな1文字ずつ判定）
 // ============================================================
-function buildKeyboard() {
-  els.flickKeyboard.innerHTML = '';
-  KEYBOARD_LAYOUT.forEach(row => {
-    const rowEl = document.createElement('div');
-    rowEl.className = 'keyboard-row';
-    row.forEach(k => rowEl.appendChild(createFlickKey(k)));
-    els.flickKeyboard.appendChild(rowEl);
-  });
-}
-
-function createFlickKey(keyData) {
-  const key = document.createElement('div');
-  key.className = 'flick-key';
-  const center = document.createElement('span');
-  center.className = 'key-center';
-  center.textContent = keyData.base;
-  key.appendChild(center);
-
-  if (keyData.flicks) {
-    const guide = document.createElement('div');
-    guide.className = 'flick-guide';
-    ['up','down','left','right'].forEach(dir => {
-      const span = document.createElement('span');
-      span.className = `flick-dir ${dir}`;
-      span.dataset.dir = dir;
-      span.textContent = keyData.flicks[dir];
-      guide.appendChild(span);
-    });
-    key.appendChild(guide);
-    const indicator = document.createElement('div');
-    indicator.className = 'flick-indicator';
-    key.appendChild(indicator);
-  } else {
-    key.classList.add('flick-key--modifier');
-  }
-
-  attachPointerEvents(key, keyData);
-  return key;
-}
-
-function attachPointerEvents(keyEl, keyData) {
-  let startX = 0, startY = 0, currentDir = null, isActive = false;
-
-  keyEl.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    keyEl.setPointerCapture(e.pointerId);
-    startX = e.clientX; startY = e.clientY;
-    currentDir = null; isActive = true;
-    keyEl.classList.add('is-active');
-    clearDirHighlights(keyEl);
-  });
-
-  keyEl.addEventListener('pointermove', e => {
-    if (!isActive || !keyData.flicks) return;
-    const dx = e.clientX - startX, dy = e.clientY - startY;
-    if (Math.hypot(dx, dy) < FLICK_THRESHOLD) {
-      currentDir = null;
-      keyEl.classList.remove('is-flicking');
-      clearDirHighlights(keyEl);
-      return;
-    }
-    currentDir = Math.abs(dx) > Math.abs(dy)
-      ? (dx < 0 ? 'left' : 'right')
-      : (dy < 0 ? 'up' : 'down');
-    keyEl.classList.add('is-flicking');
-    highlightDir(keyEl, currentDir);
-    const ind = keyEl.querySelector('.flick-indicator');
-    if (ind) {
-      const r = keyEl.getBoundingClientRect();
-      ind.style.left = `${e.clientX - r.left - 4}px`;
-      ind.style.top  = `${e.clientY - r.top  - 4}px`;
-    }
-  });
-
-  const onRelease = () => {
-    if (!isActive) return;
-    isActive = false;
-    keyEl.classList.remove('is-active', 'is-flicking');
-    clearDirHighlights(keyEl);
-    const char = (keyData.flicks && currentDir) ? keyData.flicks[currentDir] : keyData.base;
-    onCharInput(char);
-    currentDir = null;
-  };
-  keyEl.addEventListener('pointerup', onRelease);
-  keyEl.addEventListener('pointercancel', onRelease);
-}
-
-function highlightDir(keyEl, dir) {
-  clearDirHighlights(keyEl);
-  keyEl.querySelector(`.flick-dir[data-dir="${dir}"]`)?.classList.add('highlighted');
-}
-
-function clearDirHighlights(keyEl) {
-  keyEl.querySelectorAll('.flick-dir').forEach(s => s.classList.remove('highlighted'));
-}
-
-// ============================================================
-// 入力・スコア
-// ============================================================
-function onCharInput(char) {
+function processChar(char) {
   if (!state.isPlaying || state.isPaused || !state.currentWord) return;
 
-  const expected = state.currentWord.strokes[state.inputIndex];
+  const label = state.currentWord.label;
+  const expected = label[state.inputIndex];
 
-  if (char === expected) {
+  if (charsMatch(char, expected)) {
     state.inputHistory.push(char);
     state.inputIndex++;
     state.combo++;
@@ -561,7 +556,7 @@ function onCharInput(char) {
     recoverTime(TIME_CONFIG.charRecover + (getComboMultiplier() - 1) * TIME_CONFIG.comboRecoverBonus);
     updateWordDisplay();
     updateHUD();
-    if (state.inputIndex >= state.currentWord.strokes.length) onWordComplete();
+    if (state.inputIndex >= label.length) onWordComplete();
   } else {
     showEffect('MISS!', 'show-miss');
     playSE('miss');
@@ -602,38 +597,28 @@ function loadNextWord() {
   state.currentWord = pickWord();
   state.inputIndex = 0;
   state.inputHistory = [];
+  romajiBuffer = '';
+  if (els.typingInput) els.typingInput.value = '';
   updateWordDisplay();
-}
-
-function buildCharMap(label) {
-  const map = [];
-  let pos = 0;
-  for (const ch of label) {
-    const s = CHAR_DECOMPOSE[ch] || [ch];
-    map.push({ char: ch, start: pos, end: pos + s.length });
-    pos += s.length;
-  }
-  return map;
+  focusTypingInput();
 }
 
 function updateWordDisplay() {
   if (!state.currentWord) return;
   const label = state.currentWord.label;
   const idx = state.inputIndex;
-  const charMap = buildCharMap(label);
-  const activeIdx = charMap.findIndex(c => idx >= c.start && idx < c.end);
 
   els.targetWord.innerHTML = '';
-  charMap.forEach((c, i) => {
+  for (let i = 0; i < label.length; i++) {
     const span = document.createElement('span');
-    if (idx >= c.end)             span.className = 'char-done';
-    else if (i === activeIdx)     span.className = 'char-current';
-    else if (i === activeIdx + 1) span.className = 'char-next';
-    else                          span.className = 'char-pending';
-    span.textContent = c.char;
+    if (i < idx)           span.className = 'char-done';
+    else if (i === idx)    span.className = 'char-current';
+    else if (i === idx + 1) span.className = 'char-next';
+    else                   span.className = 'char-pending';
+    span.textContent = label[i];
     els.targetWord.appendChild(span);
-  });
-  els.inputDisplay.textContent = state.inputHistory.join('');
+  }
+  els.inputDisplay.textContent = label.slice(0, idx);
 }
 
 function updateHUD() {
@@ -677,11 +662,13 @@ function startTimer() {
 function pauseGame() {
   if (!state.isPlaying) return;
   state.isPaused = true;
+  blurTypingInput();
   openSettings();
 }
 
 function resumeGame() {
   state.isPaused = false;
+  focusTypingInput();
 }
 
 // ============================================================
@@ -690,6 +677,8 @@ function resumeGame() {
 function endGame() {
   state.isPlaying = false;
   clearInterval(state.timerId);
+  blurTypingInput();
+  romajiBuffer = '';
   stopBGM();
   playSE('gameOver');
 
@@ -750,6 +739,7 @@ async function startMission(missionId) {
   updateHUD();
   startTimer();
   startBGM();
+  focusTypingInput();
 }
 
 // ============================================================
@@ -780,7 +770,7 @@ function initSettings() {
 // ============================================================
 initAudio();
 initLeaderboard();
-buildKeyboard();
+initTypingInput();
 initSettings();
 showScreen('home');
 

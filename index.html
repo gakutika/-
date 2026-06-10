@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>CYBER FLICK</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== ① ホーム画面 ===== -->
+  <section class="screen screen-home" id="screenHome">
+    <div class="home-content">
+      <p class="home-subtitle">NEURAL INPUT SYSTEM v2.0</p>
+      <h1 class="home-title">CYBER<br>FLICK</h1>
+      <div class="home-title-glow" aria-hidden="true"></div>
+      <p class="home-tagline">近未来フリック入力トレーニング</p>
+      <div class="home-buttons">
+        <button class="neon-btn neon-btn--primary" id="btnStartMission">START MISSION</button>
+        <button class="neon-btn neon-btn--secondary" id="btnLeaderboard">LEADERBOARD</button>
+        <button class="neon-btn neon-btn--secondary" id="btnSettingsHome">SETTINGS</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ミッション（難易度）選択画面 ===== -->
+  <section class="screen screen-mission hidden" id="screenMission">
+    <div class="panel-card">
+      <h2 class="panel-title">SELECT MISSION</h2>
+      <p class="panel-desc">難易度を選んでミッションを開始</p>
+      <div class="mission-list">
+        <button class="mission-btn mission-btn--easy" data-mission="easy">
+          <span class="mission-rank">EASY MODE</span>
+          <span class="mission-name">初級</span>
+          <span class="mission-spec">TIME 40s / 2〜3文字 / ノルマ 1,000pt</span>
+        </button>
+        <button class="mission-btn mission-btn--normal" data-mission="normal">
+          <span class="mission-rank">NORMAL MODE</span>
+          <span class="mission-name">中級</span>
+          <span class="mission-spec">TIME 45s / 3〜5文字 / ノルマ 3,000pt</span>
+        </button>
+        <button class="mission-btn mission-btn--hard" data-mission="hard">
+          <span class="mission-rank">HARD MODE</span>
+          <span class="mission-name">上級</span>
+          <span class="mission-spec">TIME 50s / 5〜8文字 / ノルマ 5,000pt</span>
+        </button>
+      </div>
+      <button class="neon-btn neon-btn--ghost" id="btnBackHome">← HOME</button>
+    </div>
+  </section>
+
+  <!-- ===== ゲーム画面 ===== -->
+  <section class="screen screen-game hidden" id="screenGame">
+    <div class="game-container">
+      <header class="hud">
+        <div class="hud-left">
+          <div class="hud-item">
+            <span class="hud-label">SCORE</span>
+            <span class="hud-value" id="score">0</span>
+          </div>
+          <div class="hud-item combo-item">
+            <span class="hud-label">COMBO</span>
+            <span class="hud-value combo-value" id="combo">0</span>
+            <span class="combo-multiplier" id="comboMultiplier"></span>
+          </div>
+        </div>
+        <div class="hud-center">
+          <div class="hud-item">
+            <span class="hud-label">ACHIEVEMENT</span>
+            <span class="hud-value achievement-value" id="achievementHud">0%</span>
+          </div>
+        </div>
+        <div class="hud-right">
+          <div class="timer-bar-wrap">
+            <span class="hud-label">TIME</span>
+            <div class="timer-bar">
+              <div class="timer-fill" id="timerFill"></div>
+            </div>
+          </div>
+          <button class="hud-pause-btn" id="btnPause" aria-label="一時停止">⏸</button>
+        </div>
+      </header>
+
+      <main class="word-area">
+        <div class="word-label" id="missionLabel">TYPE THIS</div>
+        <div class="target-word" id="targetWord" aria-live="polite"></div>
+        <div class="input-display" id="inputDisplay"></div>
+        <div class="effect-overlay" id="effectOverlay"></div>
+      </main>
+
+      <section class="keyboard-section">
+        <p class="keyboard-hint">キーを押したまま上下左右にフリック</p>
+        <div class="flick-keyboard" id="flickKeyboard"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ===== リザルト画面 ===== -->
+  <section class="screen screen-result hidden" id="screenResult">
+    <div class="panel-card result-card">
+      <p class="result-mission-label" id="resultMissionLabel">NORMAL MODE</p>
+      <h2 class="result-status" id="resultStatus">MISSION CLEAR</h2>
+      <div class="result-achievement-wrap">
+        <span class="result-achievement-label">ACHIEVEMENT</span>
+        <span class="result-achievement-value" id="resultAchievement">120%</span>
+      </div>
+      <div class="result-score" id="resultScore">3,600 pt</div>
+      <div class="result-rank rank-display rank-b" id="resultRank">
+        <span class="rank-letter" id="resultRankLetter">B</span>
+        <span class="rank-suffix">RANK</span>
+      </div>
+      <p class="result-detail" id="resultDetail">最大コンボ 24 / クリア基準 3,000pt</p>
+
+      <!-- ランキング登録 -->
+      <div class="result-submit">
+        <label class="result-submit-label" for="agentName">エージェント名を入力</label>
+        <input type="text" class="neon-input" id="agentName" placeholder="ななしのエージェント" maxlength="16" autocomplete="off">
+        <button class="neon-btn neon-btn--secondary" id="btnSubmitScore">スコアを送信</button>
+      </div>
+
+      <div class="result-buttons">
+        <button class="neon-btn neon-btn--primary" id="btnRetry">RETRY</button>
+        <button class="neon-btn neon-btn--ghost" id="btnResultHome">HOME</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ランキング画面 ===== -->
+  <section class="screen screen-leaderboard hidden" id="screenLeaderboard">
+    <div class="panel-card lb-card">
+      <h2 class="panel-title">RANKING BOARD</h2>
+      <p class="panel-desc">難易度別トップ10エージェント</p>
+      <div class="lb-tabs" id="lbTabs">
+        <button class="lb-tab lb-tab--easy lb-tab--active" data-lb="easy">EASY</button>
+        <button class="lb-tab lb-tab--normal" data-lb="normal">NORMAL</button>
+        <button class="lb-tab lb-tab--hard" data-lb="hard">HARD</button>
+      </div>
+      <div class="lb-table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>GRADE</th>
+              <th>AGENT</th>
+              <th>SCORE</th>
+            </tr>
+          </thead>
+          <tbody id="lbTableBody">
+            <!-- game.js が動的に生成 -->
+          </tbody>
+        </table>
+      </div>
+      <p class="lb-hint" id="lbPlayerHint"></p>
+      <button class="neon-btn neon-btn--ghost" id="btnLbBack">← BACK</button>
+    </div>
+  </section>
+
+  <!-- ===== 設定ポップアップ（モーダル） ===== -->
+  <div class="modal-overlay hidden" id="screenSettings">
+    <div class="settings-card">
+      <h2 class="settings-title">SETTINGS</h2>
+      <div class="settings-row">
+        <label class="settings-label" for="bgmVolume">BGM音量</label>
+        <input type="range" class="neon-slider" id="bgmVolume" min="0" max="100" value="15">
+        <span class="settings-value" id="bgmVolumeVal">15%</span>
+      </div>
+      <div class="settings-row">
+        <label class="settings-label" for="seVolume">SE（効果音）音量</label>
+        <input type="range" class="neon-slider" id="seVolume" min="0" max="100" value="60">
+        <span class="settings-value" id="seVolumeVal">60%</span>
+      </div>
+      <button class="neon-btn neon-btn--primary" id="btnCloseSettings">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
